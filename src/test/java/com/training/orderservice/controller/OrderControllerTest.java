@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -161,6 +162,24 @@ class OrderControllerTest {
         mockMvc.perform(post("/api/v1/orders/1001/cancel").header("X-Customer-Id", "202"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("ORDER_NOT_FOUND"));
+    }
+
+    @Test
+    void hasOpenOrders_returnsTrueBody() throws Exception {
+        when(orderService.hasOpenOrders(55L)).thenReturn(true);
+
+        mockMvc.perform(get("/api/v1/orders/product/55/has-open"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+    @Test
+    void hasOpenOrders_returnsFalseBody() throws Exception {
+        when(orderService.hasOpenOrders(55L)).thenReturn(false);
+
+        mockMvc.perform(get("/api/v1/orders/product/55/has-open"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("false"));
     }
 
     @Test

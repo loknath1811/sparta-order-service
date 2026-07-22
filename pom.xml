@@ -121,6 +121,17 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+		<dependency>
+			<!-- Feign's default client (java.net.HttpURLConnection) cannot send PATCH
+			     requests ("Invalid HTTP method: PATCH"); Product Service's stock endpoints
+			     use PATCH, so Feign needs an HTTP client that supports it. -->
+			<groupId>io.github.openfeign</groupId>
+			<artifactId>feign-hc5</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

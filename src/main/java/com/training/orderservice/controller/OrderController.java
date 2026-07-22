@@ -76,6 +76,14 @@ public class OrderController {
         return ResponseEntity.ok(orderService.cancelOrder(orderId, caller));
     }
 
+    // Called by the Product Service (Feign, resolved via Eureka: name "order-service") before it
+    // discontinues a product. Returns true if any open order still references the product, in which
+    // case Product refuses the delete. See OrderServiceImpl.OPEN_STATUSES for what counts as "open".
+    @GetMapping("/product/{productId}/has-open")
+    public boolean hasOpenOrders(@PathVariable Long productId) {
+        return orderService.hasOpenOrders(productId);
+    }
+
     @DeleteMapping("/{orderId}")
     public ResponseEntity<Void> deleteOrder(
             @PathVariable Long orderId,

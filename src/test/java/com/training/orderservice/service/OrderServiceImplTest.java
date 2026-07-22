@@ -73,6 +73,31 @@ class OrderServiceImplTest {
     }
 
     @Test
+    void hasOpenOrders_returnsTrueWhenRepositoryFindsOpenOrder() {
+        when(orderRepository.existsOpenOrderForProduct(eq(55L), any())).thenReturn(true);
+
+        assertThat(orderService.hasOpenOrders(55L)).isTrue();
+    }
+
+    @Test
+    void hasOpenOrders_returnsFalseWhenNoOpenOrder() {
+        when(orderRepository.existsOpenOrderForProduct(eq(55L), any())).thenReturn(false);
+
+        assertThat(orderService.hasOpenOrders(55L)).isFalse();
+    }
+
+    @Test
+    void hasOpenOrders_queriesOnlyOpenStatuses() {
+        when(orderRepository.existsOpenOrderForProduct(eq(55L), any())).thenReturn(false);
+
+        orderService.hasOpenOrders(55L);
+
+        // Only non-terminal statuses must be passed; terminal ones must never block a product delete.
+        verify(orderRepository).existsOpenOrderForProduct(eq(55L),
+                eq(java.util.EnumSet.of(OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED)));
+    }
+
+    @Test
     void returnsOrderWhenCallerIsOwner() {
         Order order = new Order(101L, "Jane Doe", "jane@example.com", "221B Baker Street");
         when(orderRepository.findByIdWithItems(1001L)).thenReturn(Optional.of(order));

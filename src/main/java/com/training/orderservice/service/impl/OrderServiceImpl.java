@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +39,12 @@ import java.util.Set;
 public class OrderServiceImpl implements OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
+
+    // "Open" = non-terminal statuses where an order still actively references the product.
+    // Terminal statuses (REJECTED, CANCELLED, DELIVERED, RECONCILIATION_FAILED) no longer hold
+    // the product, so they must NOT block the Product Service from discontinuing it.
+    private static final Set<OrderStatus> OPEN_STATUSES =
+            EnumSet.of(OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED);
 
     private final OrderRepository orderRepository;
     private final OrderReconciliationLogRepository reconciliationLogRepository;
@@ -204,6 +211,14 @@ public class OrderServiceImpl implements OrderService {
         // Hard delete: physically remove the order (and cascaded order_items).
         orderRepository.delete(order);
         log.info("Order {} hard-deleted by admin", orderId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasOpenOrders(Long productId) {
+        boolean open = orderRepository.existsOpenOrderForProduct(productId, OPEN_STATUSES);
+        log.debug("hasOpenOrders(productId={}) -> {}", productId, open);
+        return open;
     }
 
     private void validateNoDuplicateProducts(CreateOrderRequest request) {

@@ -112,6 +112,43 @@ class OrderRepositoryTest {
     }
 
     @Test
+    void existsOpenOrderForProduct_trueWhenProductInOpenOrder() {
+        Order order = newOrder(101L, OrderStatus.CONFIRMED);
+        order.addItem(new OrderItem(order, 55L, "Wireless Mouse", new BigDecimal("25.00"), 2));
+        orderRepository.save(order);
+        entityManager.flush();
+        entityManager.clear();
+
+        boolean open = orderRepository.existsOpenOrderForProduct(
+                55L, java.util.EnumSet.of(OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED));
+
+        assertThat(open).isTrue();
+    }
+
+    @Test
+    void existsOpenOrderForProduct_falseWhenOnlyTerminalOrders() {
+        // Product 55 appears only in a CANCELLED (terminal) order → must not block a delete.
+        Order order = newOrder(101L, OrderStatus.CANCELLED);
+        order.addItem(new OrderItem(order, 55L, "Wireless Mouse", new BigDecimal("25.00"), 2));
+        orderRepository.save(order);
+        entityManager.flush();
+        entityManager.clear();
+
+        boolean open = orderRepository.existsOpenOrderForProduct(
+                55L, java.util.EnumSet.of(OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED));
+
+        assertThat(open).isFalse();
+    }
+
+    @Test
+    void existsOpenOrderForProduct_falseWhenProductNeverOrdered() {
+        boolean open = orderRepository.existsOpenOrderForProduct(
+                99_999L, java.util.EnumSet.of(OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.SHIPPED));
+
+        assertThat(open).isFalse();
+    }
+
+    @Test
     void savingOrderCascadesToOrderItems() {
         Order order = newOrder(101L, OrderStatus.CONFIRMED);
         order.addItem(new OrderItem(order, 55L, "Wireless Mouse", new BigDecimal("25.00"), 2));

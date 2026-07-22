@@ -22,4 +22,6 @@ public interface OrderService {
     OrderResponse cancelOrder(Long orderId, CallerContext caller);
 
     void deleteOrder(Long orderId, CallerContext caller);
+
+    boolean hasOpenOrders(Long productId);
 }
