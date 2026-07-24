@@ -64,12 +64,15 @@ class OrderServiceImplTest {
     @Mock
     private OrderMapper orderMapper;
 
+    @Mock
+    private com.training.orderservice.event.OrderEventPublisher orderEventPublisher;
+
     private OrderServiceImpl orderService;
 
     @BeforeEach
     void setUp() {
         orderService = new OrderServiceImpl(orderRepository, reconciliationLogRepository, productServiceClient,
-                notificationServiceClient, orderMapper);
+                notificationServiceClient, orderMapper, orderEventPublisher);
     }
 
     @Test

@@ -126,6 +126,19 @@
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<!-- Feign's default client (java.net.HttpURLConnection) cannot send PATCH
 			     requests ("Invalid HTTP method: PATCH"); Product Service's stock endpoints
 			     use PATCH, so Feign needs an HTTP client that supports it. -->

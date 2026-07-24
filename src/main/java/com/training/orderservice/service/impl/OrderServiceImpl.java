@@ -17,6 +17,8 @@ import com.training.orderservice.exception.InsufficientStockException;
 import com.training.orderservice.exception.InvalidOrderStatusTransitionException;
 import com.training.orderservice.exception.OrderAccessDeniedException;
 import com.training.orderservice.exception.OrderNotFoundException;
+import com.training.orderservice.event.OrderEvent;
+import com.training.orderservice.event.OrderEventPublisher;
 import com.training.orderservice.mapper.OrderMapper;
 import com.training.orderservice.repository.OrderRepository;
 import com.training.orderservice.repository.OrderReconciliationLogRepository;
@@ -51,17 +53,20 @@ public class OrderServiceImpl implements OrderService {
     private final ProductServiceClient productServiceClient;
     private final NotificationServiceClient notificationServiceClient;
     private final OrderMapper orderMapper;
+    private final OrderEventPublisher orderEventPublisher;
 
     public OrderServiceImpl(OrderRepository orderRepository,
                              OrderReconciliationLogRepository reconciliationLogRepository,
                              ProductServiceClient productServiceClient,
                              NotificationServiceClient notificationServiceClient,
-                             OrderMapper orderMapper) {
+                             OrderMapper orderMapper,
+                             OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
         this.reconciliationLogRepository = reconciliationLogRepository;
         this.productServiceClient = productServiceClient;
         this.notificationServiceClient = notificationServiceClient;
         this.orderMapper = orderMapper;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     @Override
@@ -95,6 +100,7 @@ public class OrderServiceImpl implements OrderService {
         order = orderRepository.save(order);
 
         dispatchConfirmationNotification(order);
+        publishOrderEvent(order);
 
         return orderMapper.toResponse(order);
     }
@@ -149,6 +155,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(to);
         Order saved = orderRepository.save(order);
         log.info("Order {} transitioned {} -> {}", orderId, from, to);
+        publishOrderEvent(saved);
 
         return orderMapper.toResponse(saved);
     }
@@ -192,6 +199,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLED);
         Order saved = orderRepository.save(order);
         log.info("Order {} cancelled (was {})", orderId, from);
+        publishOrderEvent(saved);
 
         return orderMapper.toResponse(saved);
     }
@@ -244,5 +252,10 @@ public class OrderServiceImpl implements OrderService {
                 items,
                 LocalDateTime.now());
         notificationServiceClient.sendOrderConfirmation(payload);
+    }
+
+    private void publishOrderEvent(Order order) {
+        orderEventPublisher.publish(OrderEvent.of(
+                order.getId(), order.getCustomerId(), order.getStatus(), order.getTotalAmount()));
     }
 }

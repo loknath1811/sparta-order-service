@@ -40,7 +40,11 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public OrderResponse getOrder(
             @PathVariable Long orderId,
-            @RequestHeader("X-Customer-Id") Long customerId,
+            // Optional: an admin caller has no customerId at all (see CallerContext.isAdmin()
+            // short-circuiting the ownership check in OrderServiceImpl) - only a CUSTOMER
+            // caller actually needs this to be present, and that's enforced by the ownership
+            // check itself, not by a required header.
+            @RequestHeader(value = "X-Customer-Id", required = false) Long customerId,
             @RequestHeader(value = "X-User-Role", required = false, defaultValue = "CUSTOMER") String role) {
         CallerContext caller = new CallerContext(customerId, role);
         Order order = orderService.getOrderById(orderId, caller);
@@ -70,7 +74,8 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable Long orderId,
-            @RequestHeader("X-Customer-Id") Long customerId,
+            // Optional for the same reason as getOrder() above - an admin caller has no customerId.
+            @RequestHeader(value = "X-Customer-Id", required = false) Long customerId,
             @RequestHeader(value = "X-User-Role", required = false, defaultValue = "CUSTOMER") String role) {
         CallerContext caller = new CallerContext(customerId, role);
         return ResponseEntity.ok(orderService.cancelOrder(orderId, caller));
