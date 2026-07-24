@@ -69,9 +69,16 @@ class OrderControllerTest {
     }
 
     @Test
-    void returns400WhenCustomerIdHeaderMissing() throws Exception {
+    void returns404WhenCustomerIdHeaderMissingAndOrderNotOwned() throws Exception {
+        // X-Customer-Id is optional at the controller level (admin callers have none);
+        // a missing header for a non-admin caller is enforced as a 404 by the ownership
+        // check in OrderServiceImpl, not a 400 here.
+        when(orderService.getOrderById(eq(1001L), any(CallerContext.class)))
+                .thenThrow(new OrderNotFoundException(1001L));
+
         mockMvc.perform(get("/api/v1/orders/1001"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("ORDER_NOT_FOUND"));
     }
 
     @Test
